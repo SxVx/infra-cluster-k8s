@@ -1,0 +1,5 @@
+cloudspace_name = "portafolio"
+region          = "us-central-dfw-1"
+server_class    = "mh.vs1.large-dfw" # 4 vCPU / 32 GB, Gen 1
+bid_price       = 0.02               # multiple of 0.005; class minimum is 0.015
+node_count      = 1

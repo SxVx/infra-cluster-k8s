@@ -1,0 +1,12 @@
+# Helm values for traefik/traefik, chart 41.6.0 (Traefik v3.7.13).
+#
+#   helm upgrade --install traefik traefik/traefik -n traefik --create-namespace \
+#     --version 41.6.0 -f k8s/traefik/values.yaml
+#
+# Traffic enters through Cloudflare Tunnel -> cloudflared -> this ClusterIP Service,
+# so no LoadBalancer (and no ~$10/month charge or public IP) is needed.
+# In chart 41.x the type lives under service.spec.type; `service.type` is silently ignored.
+# See docs/incidents/2026-10-07-traefik-loadbalancer.md.
+service:
+  spec:
+    type: ClusterIP

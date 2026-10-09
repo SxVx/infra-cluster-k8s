@@ -1,0 +1,26 @@
+# Terraform: state and variables contain sensitive data
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.auto.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Kubeconfig and secrets
+kubeconfig*
+*.kubeconfig
+*.env
+.env.*
+*.key
+*.pem
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
