@@ -17,7 +17,8 @@ It hosts my personal projects under `*.jesevilla.dev`.
 - **Infrastructure as code.** The cluster is provisioned with Terraform; Kubernetes manifests and Helm values
   live in this repo with pinned versions.
 - **Documented like production.** [Architecture decisions](docs/decisions/), a real
-  [incident postmortem](docs/incidents/2026-10-07-traefik-loadbalancer.md), an
+  [incident postmortem](docs/incidents/2026-10-07-traefik-loadbalancer.md), a
+  [change record](docs/changes/2026-10-14-ingress-to-gateway-api.md), an
   [operations runbook](docs/operations.md) and a [troubleshooting log](docs/troubleshooting.md).
 
 ## Architecture
@@ -80,6 +81,7 @@ Trade-off: a single Spot node can be preempted. That is acceptable for a portfol
 │   └── spot-kubeconfig.sh    # Refreshes the short-lived kubeconfig token
 ├── docs/
 │   ├── decisions/            # Architecture Decision Records (ADRs)
+│   ├── changes/              # Change records (what was applied, with commands)
 │   ├── incidents/            # Postmortems
 │   ├── operations.md         # Bootstrap and day-2 runbook
 │   └── troubleshooting.md    # Problems found and how they were solved

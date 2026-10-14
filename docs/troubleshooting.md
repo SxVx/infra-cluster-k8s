@@ -11,4 +11,5 @@ Problems hit while building the platform, with their cause and fix.
 | `kubectl`: `the server has asked for the client to provide credentials` (401) | The kubeconfig token is short-lived, and `terraform output` returns the **stored** one. | `terraform apply -refresh-only` before reading the output. The script does this. |
 | Wildcard hostname not resolving through the tunnel | Cloudflare does not create DNS records for `*` tunnel routes. | Create a proxied `CNAME *` → `<tunnel-id>.cfargotunnel.com` manually. |
 | Unexpected load balancer charge | The Traefik chart ignored `service.type`. | See the [postmortem](incidents/2026-10-07-traefik-loadbalancer.md). |
+| `helm upgrade` prints *DEPRECATION WARNING: Gateway API CRDs will no longer be shipped…* | Static text in the chart's `NOTES.txt`, shown whenever the Gateway provider is enabled. The CRDs are already installed separately. | Nothing to do. See the [migration record](changes/2026-10-14-ingress-to-gateway-api.md). |
 | `helm upgrade --version 3.7.13`: chart not found | `--version` expects the **chart** version (`41.6.0`), not the app version. | Read the `CHART` column of `helm list`. |
