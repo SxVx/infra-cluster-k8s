@@ -18,6 +18,8 @@ The `Ingress` API is also feature-frozen; the Gateway API is its successor and T
   `traefik` namespace, pointing to Services in the app namespaces.
 - Each app namespace grants that access with a **ReferenceGrant** scoped to a single Service.
 
+Applied on 2026-10-14: see the [change record](../changes/2026-10-14-ingress-to-gateway-api.md).
+
 ## Consequences
 
 - ✅ One place lists every public hostname of the cluster. A route cannot be published from an app namespace.
