@@ -1,0 +1,38 @@
+# Every public hostname of the cluster, in one place.
+# Each backend lives in another namespace, so that namespace needs a ReferenceGrant
+# (k8s/<app>/referencegrant.yaml) or the route is rejected with RefNotPermitted.
+#
+# New app: add an HTTPRoute here + a ReferenceGrant in the app namespace. No Cloudflare change for
+# <app>.jesevilla.dev (wildcard); the apex needs its own tunnel route.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: whoami
+  namespace: traefik
+spec:
+  parentRefs:
+    - name: public
+  hostnames:
+    - whoami.jesevilla.dev
+  rules:
+    - backendRefs:
+        - name: whoami
+          namespace: whoami
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: personal-web
+  namespace: traefik
+spec:
+  parentRefs: # Indicate which gateway is connected to the router.
+    - name: public # name of the gateway, the name its public.
+  hostnames:
+    - jesevilla.dev
+    - www.jesevilla.dev
+  rules:
+    - backendRefs:
+        - name: web
+          namespace: personal-web
+          port: 80

@@ -1,0 +1,14 @@
+# Portfolio site. Source and CI/CD: github.com/SxVx/personal-web-page
+# Public route: k8s/gateway/routes.yaml (jesevilla.dev, www.jesevilla.dev).
+#
+# The app pipeline only runs `kubectl set image` on deployment/web (by digest) with the
+# ci-deployer ServiceAccount (rbac.yaml). Re-applying resets the image to :main, which is
+# always the latest published build.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - referencegrant.yaml
+  - rbac.yaml

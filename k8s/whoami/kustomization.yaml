@@ -1,0 +1,8 @@
+# Demo app. Public route: k8s/gateway/routes.yaml (whoami.jesevilla.dev).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - referencegrant.yaml

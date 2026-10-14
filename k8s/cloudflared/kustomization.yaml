@@ -1,0 +1,6 @@
+# The `cloudflared-token` Secret is created out-of-band (ADR-0005), see docs/operations.md.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - deployment.yaml

@@ -20,9 +20,9 @@ Run `cloudflared` inside the cluster (2 replicas) and publish everything through
 
 - ✅ $0 for ingress. The cluster has **no inbound ports and no public IP**, and Cloudflare provides TLS and
   proxying in front of it.
-- ✅ Publishing a new subdomain only needs a new Ingress object. DNS and the tunnel stay untouched.
+- ✅ Publishing a new subdomain only needs a new route in the cluster ([ADR-0007](0007-gateway-api.md)). DNS and the tunnel stay untouched.
 - ✅ Admin tools can be protected later with Cloudflare Access (free up to 50 users).
-- ⚠️ Everything under `*.jesevilla.dev` is public as soon as an Ingress exists. Internal tools must sit
+- ⚠️ Everything under `*.jesevilla.dev` is public as soon as a route exists. Internal tools must sit
   behind Access.
 - ⚠️ Vendor lock-in on Cloudflare for the edge, and the wildcard covers a single level (`app.jesevilla.dev`),
   not the root domain.

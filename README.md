@@ -12,7 +12,7 @@ It hosts my personal projects under `*.jesevilla.dev`.
   control plane is free, and the tunnel replaces a ~$10/month cloud load balancer.
 - **Zero inbound exposure.** `cloudflared` opens an outbound-only connection to Cloudflare; the cluster has no
   `LoadBalancer` Service and no reachable IP.
-- **New app = one Ingress.** A wildcard DNS record and tunnel route send every `*.jesevilla.dev` request to
+- **One tunnel, one Gateway, one routes file.** A wildcard DNS record and tunnel route send every `*.jesevilla.dev` request to
   Traefik, which routes by `Host` header. Publishing a project needs no DNS or Cloudflare changes.
 - **Infrastructure as code.** The cluster is provisioned with Terraform; Kubernetes manifests and Helm values
   live in this repo with pinned versions.
@@ -38,8 +38,8 @@ flowchart LR
 
 1. Cloudflare terminates TLS for `*.jesevilla.dev` and forwards the request through the tunnel.
 2. `cloudflared` is "blind": it sends every hostname to Traefik's internal Service.
-3. Traefik matches the `Host` header against the Ingress objects in **all** namespaces and routes to the
-   right Service. No matching Ingress → `404`.
+3. Traefik matches the `Host` header against the HTTPRoutes in [`k8s/gateway/routes.yaml`](k8s/gateway/routes.yaml)
+   (Gateway API, single Gateway) and routes to the right Service. No matching route → `404`.
 
 ## Stack
 
@@ -48,7 +48,7 @@ flowchart LR
 | Compute | Rackspace Spot, 1 × `mh.vs1.large-dfw` (4 vCPU, 32 GB) | Auction pricing, free control plane — [ADR-0001](docs/decisions/0001-rackspace-spot.md) |
 | Provisioning | Terraform + `rackerlabs/spot` provider | Reproducible cluster — [ADR-0006](docs/decisions/0006-local-terraform-state.md) |
 | Network (CNI) | Calico | Default supported by Spot |
-| Ingress | Traefik (Helm chart 41.6.0) | Maintained; ingress-nginx was retired — [ADR-0003](docs/decisions/0003-traefik-ingress.md) |
+| Routing | Traefik (Helm chart 41.6.0) + Gateway API | One Gateway, centralized routes — [ADR-0003](docs/decisions/0003-traefik-ingress.md), [ADR-0007](docs/decisions/0007-gateway-api.md) |
 | Edge | Cloudflare Tunnel + wildcard DNS | No load balancer, no open ports — [ADR-0002](docs/decisions/0002-cloudflare-tunnel.md) |
 | Secrets | Created out-of-band, never in Git | [ADR-0005](docs/decisions/0005-secrets-out-of-git.md) |
 
@@ -73,7 +73,9 @@ Trade-off: a single Spot node can be preempted. That is acceptable for a portfol
 ├── k8s/
 │   ├── traefik/values.yaml   # Helm values (ClusterIP, no LoadBalancer)
 │   ├── cloudflared/          # Tunnel connector (2 replicas)
-│   └── whoami/               # Demo app: Namespace, Deployment, Service, Ingress
+│   ├── gateway/              # The only Gateway + every HTTPRoute (routes.yaml)
+│   ├── personal-web/         # Portfolio (jesevilla.dev): one file per resource + Kustomize
+│   └── whoami/               # Demo app: Namespace, Deployment, Service, ReferenceGrant
 ├── scripts/
 │   └── spot-kubeconfig.sh    # Refreshes the short-lived kubeconfig token
 ├── docs/

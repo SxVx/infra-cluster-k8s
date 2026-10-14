@@ -10,3 +10,20 @@
 service:
   spec:
     type: ClusterIP
+
+# Routing uses the Gateway API only (ADR-0007). The chart no longer ships the Gateway API CRDs:
+# install them first (docs/operations.md).
+providers:
+  kubernetesGateway:
+    enabled: true
+  kubernetesIngress:
+    enabled: false
+
+ingressClass:
+  enabled: false
+
+# The chart creates the GatewayClass `traefik`; the Gateway itself is versioned in k8s/gateway/.
+gatewayClass:
+  enabled: true
+gateway:
+  enabled: false

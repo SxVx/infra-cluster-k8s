@@ -1,0 +1,20 @@
+# Lets the HTTPRoutes in the traefik namespace (k8s/gateway/routes.yaml) send traffic to this Service.
+# Scoped to one Service: nothing else in this namespace is reachable from the Gateway.
+
+# A ReferenceGrant is a permission given by the target namespace: 
+# “I accept that objects from another namespace refer to my resources.” 
+# It doesn't move traffic or create anything; Traefik only consults it before accepting a route.
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: allow-gateway-routes
+  namespace: whoami
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: traefik
+  to:
+    - group: ""
+      kind: Service
+      name: whoami

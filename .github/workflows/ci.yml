@@ -41,15 +41,34 @@ jobs:
   manifests:
     name: Kubernetes manifests
     runs-on: ubuntu-24.04
+    env:
+      KUBECONFORM_VERSION: 0.8.0
+      # Gateway API CRD schemas (HTTPRoute, Gateway, ReferenceGrant) are not in the default catalog.
+      CRD_SCHEMAS: https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json
     steps:
       - uses: actions/checkout@v7
-      - name: kubeconform
+      - name: Install kubeconform
         run: |
-          curl -sSL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
-          ./kubeconform -strict -summary -ignore-filename-pattern 'values\.yaml$' k8s/
+          curl -sSfL "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar xz kubeconform
+      - name: Render and validate every kustomization
+        run: |
+          for dir in k8s/*/; do
+            [ -f "${dir}kustomization.yaml" ] || continue
+            echo "::group::${dir}"
+            kubectl kustomize "$dir" \
+              | ./kubeconform -strict -summary -schema-location default -schema-location "$CRD_SCHEMAS" -
+            echo "::endgroup::"
+          done
       - name: No Services of type LoadBalancer
         run: |
           if grep -rnE 'type:\s*LoadBalancer' k8s/; then
             echo "::error::LoadBalancer Services cost ~\$10/month and bypass Cloudflare (see ADR-0002)"
+            exit 1
+          fi
+      - name: No Ingress objects (routing is Gateway API only, ADR-0007)
+        run: |
+          if grep -rnE '^kind:\s*Ingress$' k8s/; then
+            echo "::error::Add an HTTPRoute to k8s/gateway/routes.yaml instead"
             exit 1
           fi

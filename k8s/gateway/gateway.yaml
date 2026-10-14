@@ -1,0 +1,17 @@
+# The only Gateway in the cluster. Cloudflare Tunnel -> traefik Service :80 -> entrypoint `web` (:8000).
+# The GatewayClass `traefik` is created by the Traefik Helm chart (k8s/traefik/values.yaml).
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: public
+  namespace: traefik
+spec:
+  gatewayClassName: traefik
+  listeners:
+    - name: web
+      protocol: HTTP
+      port: 8000 # must match Traefik's `web` entrypoint port
+      allowedRoutes:
+        # Only routes from this namespace can attach: all routing lives in routes.yaml.
+        namespaces:
+          from: Same

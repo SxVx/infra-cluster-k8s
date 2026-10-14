@@ -1,0 +1,7 @@
+# Single public entry point: one Gateway + every HTTPRoute of the cluster.
+# Requires the Gateway API CRDs and Traefik with the kubernetesGateway provider (see docs/operations.md).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - gateway.yaml
+  - routes.yaml

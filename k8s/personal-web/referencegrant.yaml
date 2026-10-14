@@ -1,0 +1,16 @@
+# Lets the HTTPRoutes in the traefik namespace (k8s/gateway/routes.yaml) send traffic to this Service.
+# Scoped to one Service: nothing else in this namespace is reachable from the Gateway.
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: allow-gateway-routes
+  namespace: personal-web
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: traefik
+  to:
+    - group: ""
+      kind: Service
+      name: web

@@ -34,7 +34,14 @@ cd ../.. && scripts/spot-kubeconfig.sh
 kubectl get nodes
 ```
 
-### 2. Traefik
+### 2. Gateway API CRDs + Traefik
+
+The Traefik chart no longer ships the Gateway API CRDs ([ADR-0007](decisions/0007-gateway-api.md)).
+Install them first, pinned to the version the chart documents:
+
+```bash
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
+```
 
 ```bash
 helm repo add traefik https://traefik.github.io/charts && helm repo update
@@ -53,46 +60,68 @@ helm upgrade --install traefik traefik/traefik -n traefik --create-namespace \
    ```bash
    kubectl create namespace cloudflared
    kubectl -n cloudflared create secret generic cloudflared-token --from-literal=token='<TOKEN>'
-   kubectl apply -f k8s/cloudflared/cloudflared.yaml
+   kubectl apply -k k8s/cloudflared
    ```
 3. In the tunnel's *Published application routes*: subdomain `*`, domain `jesevilla.dev`,
    service `HTTP` → `traefik.traefik.svc.cluster.local:80`.
 4. DNS: add a proxied `CNAME *` → `<tunnel-id>.cfargotunnel.com`.
 
-### 4. Smoke test
+### 4. Gateway, routes and smoke test
 
 ```bash
-kubectl apply -f k8s/whoami/whoami.yaml
-curl -I https://whoami.jesevilla.dev        # HTTP/2 200
+kubectl apply -k k8s/whoami
+kubectl apply -k k8s/gateway
+kubectl -n traefik get gateway public               # PROGRAMMED=True
+kubectl -n traefik get httproute                    # check status if a host returns 404
+curl -I https://whoami.jesevilla.dev                # HTTP/2 200
 ```
 
 ## Publishing a new app
 
-Create a namespace, Deployment and Service, plus an Ingress **in the same namespace** as the Service.
-No Cloudflare change is needed:
+All public hostnames live in [`k8s/gateway/routes.yaml`](../k8s/gateway/routes.yaml) ([ADR-0007](decisions/0007-gateway-api.md)).
+No Cloudflare change is needed for `<app>.jesevilla.dev`.
 
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: myapp
-  namespace: myapp
-spec:
-  ingressClassName: traefik
-  rules:
-    - host: myapp.jesevilla.dev
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: myapp
-                port:
-                  number: 80
+1. Create `k8s/<app>/` with one file per resource (`namespace.yaml`, `deployment.yaml`, `service.yaml`,
+   `referencegrant.yaml`) and a `kustomization.yaml` listing them. Copy `k8s/whoami/` as a template.
+2. Add an HTTPRoute to `k8s/gateway/routes.yaml` (namespace `traefik`, `parentRefs: [{name: public}]`,
+   `backendRefs` with the app `namespace`).
+3. Apply both:
+   ```bash
+   kubectl apply -k k8s/<app>
+   kubectl apply -k k8s/gateway
+   kubectl -n traefik describe httproute <app>      # Accepted=True, ResolvedRefs=True
+   ```
+
+`ResolvedRefs=False` with reason `RefNotPermitted` means the ReferenceGrant is missing or names another Service.
+Always set `resources.requests` and `limits`: the cluster has a single node.
+
+### App deployed from its own repo (CI/CD)
+
+Example: `k8s/personal-web/` (portfolio, repo `SxVx/personal-web-page`). Besides the usual files it has
+`rbac.yaml`: a `ci-deployer` ServiceAccount restricted to that namespace. The app pipeline only runs
+`kubectl set image` + `rollout status`.
+
+```bash
+kubectl apply -k k8s/personal-web
+scripts/ci-kubeconfig.sh personal-web | pbcopy   # → app repo: secret KUBE_CONFIG
 ```
 
-Always set `resources.requests` and `limits`: the cluster has a single node.
+Re-run `scripts/ci-kubeconfig.sh` after every `terraform destroy/apply` (the API endpoint changes).
+
+## One-time migration from Ingress to Gateway API
+
+Order matters: CRDs, ReferenceGrants and routes go in before Traefik switches providers, so the cutover
+is a single Traefik restart.
+
+```bash
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
+kubectl apply -k k8s/whoami && kubectl apply -k k8s/personal-web     # adds the ReferenceGrants
+kubectl apply -k k8s/gateway        # idle until Traefik enables the Gateway provider
+helm upgrade traefik traefik/traefik -n traefik --version 41.6.0 -f k8s/traefik/values.yaml
+kubectl -n traefik get gateway,httproute
+curl -I https://whoami.jesevilla.dev
+kubectl delete ingress -A --all                                       # leftovers, now unused
+```
 
 ## Routine checks
 
@@ -109,5 +138,6 @@ Review the Spot cost explorer monthly.
 | Component | How |
 |---|---|
 | Traefik | Bump `--version`, read the chart changelog, `helm template`, then `helm upgrade` |
-| cloudflared / whoami | Change the image tag, `kubectl diff -f`, `kubectl apply -f`, `kubectl rollout status` |
+| cloudflared / whoami | Change the image tag, `kubectl diff -k`, `kubectl apply -k`, `kubectl rollout status` |
 | Kubernetes | Change `kubernetes_version`, then `terraform plan` / `apply` |
+| Gateway API CRDs | Check the version the Traefik chart supports, then `kubectl apply --server-side -f .../<version>/standard-install.yaml` |

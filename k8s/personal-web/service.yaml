@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: personal-web
+spec:
+  selector:
+    app: personal-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

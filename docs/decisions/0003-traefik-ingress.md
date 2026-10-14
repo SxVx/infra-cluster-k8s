@@ -1,6 +1,6 @@
 # ADR-0003: Traefik as the ingress controller
 
-**Status:** Accepted · **Date:** 2026-09
+**Status:** Accepted · **Date:** 2026-09 · Routing API superseded by [ADR-0007](0007-gateway-api.md) (Traefik stays)
 
 ## Context
 
